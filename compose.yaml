@@ -3,6 +3,17 @@ services:
     build: .
     ports:
       - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:mysecretpassword@db:5432/postgres?schema=public"
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      [
+        "sh",
+        "-c",
+        "npx prisma contract emit && npx prisma db update && npx prisma db sign && npx tsx ./src/index.ts",
+      ]
   db:
     image: postgres:18
     container_name: postgres-dev
@@ -11,7 +22,12 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres_data:

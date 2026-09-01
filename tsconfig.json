@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "target": "ES2022",
     "module": "preserve",
     "moduleResolution": "bundler",
@@ -12,7 +16,5 @@
     "esModuleInterop": true,
     "outDir": "dist"
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }
