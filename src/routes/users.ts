@@ -1,37 +1,93 @@
 import express, { type Request, type Response } from "express";
 import { genSaltSync, hashSync, compareSync } from "bcrypt-ts";
+import jwt from "jsonwebtoken";
 import { db } from "@/prisma/db";
 
 const router = express.Router();
 const salt = genSaltSync(10);
 
 router.get("/", async (req: Request, res: Response) => {
-  const users = await db.orm.public.User.all();
-  res.json(users);
+  const limit = parseInt(req.query.limit as string) || 50;
+  const offset = parseInt(req.query.offset as string) || 0;
+
+  try {
+    console.log("User model keys:", Object.keys(db.orm.public.User));
+    console.log(
+      "User prototype keys:",
+      Object.getOwnPropertyNames(Object.getPrototypeOf(db.orm.public.User)),
+    );
+    const users = await db.orm.public.User.limit(10).all();
+
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.get("/:username", async (req: Request, res: Response) => {
-  const users = await db.orm.public.User.all();
-  res.json(users);
+  try {
+    const { username } = req.params;
+
+    const user = await db.orm.public.User.where({ username: username }).first();
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 router.post("/login", async (req: Request, res: Response) => {
   const { username, password } = req.body;
-  const user = await db.orm.public.User.where({ username: username }).first();
-  const passwordHash = user.passwordHash;
 
-  res.status(200).json(compareSync(password, passwordHash));
+  try {
+    const user = await db.orm.public.User.where({ username: username }).first();
+
+    if (!user) {
+      res.status(400).json({ error: "Incorrect username or password" });
+      return;
+    }
+
+    if (!compareSync(password, user.passwordHash)) {
+      res.status(400).json({ error: "Incorrect username or password" });
+      return;
+    }
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json(token);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+    return;
+  }
 });
 
 router.post("/register", async (req: Request, res: Response) => {
   const { username, password, name } = req.body;
   const passwordHash = hashSync(password, salt);
-  const newUser = await db.orm.public.User.create({
-    username,
-    passwordHash,
-    name,
-  });
-  res.status(201).json(newUser);
+
+  try {
+    const newUser = await db.orm.public.User.create({
+      username,
+      passwordHash,
+      name,
+    });
+
+    const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET!, {
+      expiresIn: "1h",
+    });
+
+    res.status(201).json([newUser, token]);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

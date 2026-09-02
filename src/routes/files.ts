@@ -3,6 +3,8 @@ import express, {
   type Response,
   type NextFunction,
 } from "express";
+import jwt from "jsonwebtoken";
+import { db } from "@/prisma/db";
 
 const router = express.Router();
 
