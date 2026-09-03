@@ -7,6 +7,8 @@ services:
       DATABASE_URL: "postgresql://postgres:mysecretpassword@db:5432/postgres?schema=public"
       COMPOSE_REMOVE_ORPHANS: true
       JWT_SECRET: "a95920d049cd296fd67544916b61f8bfbcf58a9a957bbe99ed027653e7a1f95e60b55690591343e6c47383b8add09b8704e2c0e2fe6ef4c9e4b6ca6d075c246e"
+    volumes:
+      - uploads_data:/tmp/my-uploads
     depends_on:
       db:
         condition: service_healthy
@@ -33,3 +35,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

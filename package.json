@@ -2,11 +2,11 @@
   "name": "my-api",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js",
-    "practice": "nodemon practice.js",
+    "dev": "nodemon src/index.ts",
+    "practice": "nodemon practice.ts",
     "postinstall": "prisma skills sync || exit 0",
     "contract:emit": "prisma contract emit"
   },
@@ -22,6 +22,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.3.0",
     "tar": "^7.5.22"
   },
   "devDependencies": {

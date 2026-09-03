@@ -32,8 +32,7 @@ router.get("/:username", async (req: Request, res: Response) => {
     const user = await db.orm.public.User.where({ username: username }).first();
 
     if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
+      return res.status(404).json({ error: "User not found" });
     }
 
     res.json(user);
@@ -49,13 +48,11 @@ router.post("/login", async (req: Request, res: Response) => {
     const user = await db.orm.public.User.where({ username: username }).first();
 
     if (!user) {
-      res.status(400).json({ error: "Incorrect username or password" });
-      return;
+      return res.status(400).json({ error: "Incorrect username or password" });
     }
 
     if (!compareSync(password, user.passwordHash)) {
-      res.status(400).json({ error: "Incorrect username or password" });
-      return;
+      return res.status(400).json({ error: "Incorrect username or password" });
     }
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
@@ -65,7 +62,6 @@ router.post("/login", async (req: Request, res: Response) => {
     res.status(200).json(token);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
-    return;
   }
 });
 
