@@ -8,3 +8,20 @@ model User {
   createdAt     TimestamptzString @default(now())
   updatedAt     temporal.updatedAtString()
 }
+
+model File {
+  id            Int     @id @default(autoincrement())
+  originalName  String
+  storedName    String  @unique
+  mimeType      String
+  size          Int
+  path          String
+
+  ownerId       String
+  owner         User    @relation(fields: [ownerid], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([ownerId])
+}
