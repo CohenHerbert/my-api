@@ -66,8 +66,14 @@ router.post(
 router.get("/:filepath", (req: Request, res: Response) => {
   const token = req.headers["authorization"];
 
-  const { filepath } = req.params;
-  const fullPath = path.join("/tmp/my-uploads", filepath);
+  const { filepath } = req.params as { filepath: string };
+
+  const baseDir = path.resolve("/tmp/my-uploads");
+  const fullPath = path.resolve(baseDir, filepath);
+
+  if (!fullPath.startsWith(baseDir)) {
+    return res.status(403).json({ error: "Access Denied: Invalid path" });
+  }
 
   if (!token) {
     return res.status(401).json({ error: "No token provided" });
