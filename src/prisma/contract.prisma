@@ -20,8 +20,8 @@ model File {
   ownerId       String
   owner         User    @relation(fields: [ownerid], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     TimestamptzString @default(now())
+  updatedAt     temporal.updatedAtString()
 
   @@index([ownerId])
 }

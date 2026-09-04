@@ -17,6 +17,8 @@
   "dependencies": {
     "@prisma/client": "^7.10.0",
     "@prisma/orm-postgres": "^8.0.0-rc.8",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.2.0",
     "bcrypt-ts": "^9.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
@@ -28,6 +30,7 @@
   "devDependencies": {
     "@prisma/cli-engine": "^0.2.3",
     "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^26.4.0",
     "nodemon": "^3.1.11",
     "prisma": "^8.0.0-rc.10",
