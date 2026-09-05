@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
-// import { db } from "@/prisma/db";
+import { db } from "@/prisma/db";
+import { unlink } from "node:fs/promises";
 
 const router = express.Router();
 
@@ -39,32 +40,47 @@ router.post(
   upload.single("file"),
   async (req: Request, res: Response) => {
     const file = req.file;
+    const authHeader = req.headers["authorization"];
 
     if (!file) {
       return res.status(400).json({ error: "No file provided" });
     }
 
-    console.log(file.filename);
+    if (!authHeader) {
+      await unlink(file.path);
+      return res.status(401).json({ error: "No token provided" });
+    }
 
-    // const newFile = await db.orm.public.File.create({
-    //   originalName: file.filename,
-    //   storedName: "",
-    //   mimeType: "",
-    //   size: 1,
-    //   path: "",
+    try {
+      const token = authHeader.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        userId: number;
+      };
 
-    //   ownerId: "",
-    // });
+      const newFile = await db.orm.public.File.create({
+        originalName: file.originalname,
+        storedName: file.filename,
+        mimeType: file.mimetype,
+        size: file.size,
+        path: file.path,
 
-    res.status(200).json({
-      filename: file.filename,
-      url: `http://localhost:3000/files/${file.filename}`,
-    });
+        ownerId: decoded.userId,
+      });
+
+      res.status(200).json({ newFile });
+    } catch (error) {
+      await unlink(file.path);
+
+      if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
   },
 );
 
 router.get("/:filepath", (req: Request, res: Response) => {
-  const token = req.headers["authorization"];
+  const authHeader = req.headers["authorization"];
 
   const { filepath } = req.params as { filepath: string };
 
@@ -75,19 +91,26 @@ router.get("/:filepath", (req: Request, res: Response) => {
     return res.status(403).json({ error: "Access Denied: Invalid path" });
   }
 
-  if (!token) {
+  if (!authHeader) {
     return res.status(401).json({ error: "No token provided" });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: number;
+    };
+
     return res.download(fullPath, (err) => {
       if (err && !res.headersSent) {
         return res.status(404).json({ error: "File not found" });
       }
     });
   } catch (error) {
-    res.status(401).json({ error: "Invalid token" });
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

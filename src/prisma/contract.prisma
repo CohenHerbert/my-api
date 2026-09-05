@@ -17,8 +17,8 @@ model File {
   size          Int
   path          String
 
-  ownerId       String
-  owner         User    @relation(fields: [ownerid], references: [id], onDelete: Cascade)
+  ownerId       Int
+  owner         User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   createdAt     TimestamptzString @default(now())
   updatedAt     temporal.updatedAtString()
