@@ -2,6 +2,7 @@ import express, { type Request, type Response } from "express";
 import { genSaltSync, hashSync, compareSync } from "bcrypt-ts";
 import jwt from "jsonwebtoken";
 import { db } from "@/prisma/db";
+import authenticateToken from "@/middleware/auth";
 
 const router = express.Router();
 const salt = genSaltSync(10);
@@ -21,25 +22,31 @@ router.get("/", async (req: Request, res: Response) => {
     res.json(users);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
-router.get("/:username", async (req: Request, res: Response) => {
-  try {
-    const { username } = req.params;
+router.get(
+  "/:username",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { username } = req.params;
 
-    const user = await db.orm.public.User.where({ username: username }).first();
+      const user = await db.orm.public.User.where({
+        username: username,
+      }).first();
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
     }
-
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  },
+);
 
 router.post("/login", async (req: Request, res: Response) => {
   const { username, password } = req.body;
@@ -48,11 +55,15 @@ router.post("/login", async (req: Request, res: Response) => {
     const user = await db.orm.public.User.where({ username: username }).first();
 
     if (!user) {
-      return res.status(400).json({ error: "Incorrect username or password" });
+      return res
+        .status(400)
+        .json({ message: "Incorrect username or password" });
     }
 
     if (!compareSync(password, user.passwordHash)) {
-      return res.status(400).json({ error: "Incorrect username or password" });
+      return res
+        .status(400)
+        .json({ message: "Incorrect username or password" });
     }
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
@@ -61,7 +72,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
     res.status(200).json(token);
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -82,7 +93,7 @@ router.post("/register", async (req: Request, res: Response) => {
 
     res.status(201).json([newUser, token]);
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

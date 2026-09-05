@@ -1,12 +1,8 @@
-import express, {
-  type Request,
-  type Response,
-  type NextFunction,
-} from "express";
+import express from "express";
 import users from "./routes/users";
 import files from "./routes/files";
 
-const app: Express = express();
+const app = express();
 const port = 3000;
 
 app.use(express.json());

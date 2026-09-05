@@ -26,7 +26,7 @@ router.get("/", (req: Request, res: Response) => {
   fs.readdir(dirPath, (err, files) => {
     if (err) {
       return res.status(500).json({
-        error: "Unable to scan directory",
+        message: "Unable to scan directory",
         details: err.message,
       });
     }
@@ -43,12 +43,12 @@ router.post(
     const authHeader = req.headers["authorization"];
 
     if (!file) {
-      return res.status(400).json({ error: "No file provided" });
+      return res.status(400).json({ message: "No file provided" });
     }
 
     if (!authHeader) {
       await unlink(file.path);
-      return res.status(401).json({ error: "No token provided" });
+      return res.status(401).json({ message: "No token provided" });
     }
 
     try {
@@ -72,9 +72,9 @@ router.post(
       await unlink(file.path);
 
       if (error instanceof jwt.JsonWebTokenError) {
-        return res.status(401).json({ error: "Invalid or expired token" });
+        return res.status(401).json({ message: "Invalid or expired token" });
       }
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ message: "Internal server error" });
     }
   },
 );
@@ -88,11 +88,11 @@ router.get("/:filepath", (req: Request, res: Response) => {
   const fullPath = path.resolve(baseDir, filepath);
 
   if (!fullPath.startsWith(baseDir)) {
-    return res.status(403).json({ error: "Access Denied: Invalid path" });
+    return res.status(403).json({ message: "Access Denied: Invalid path" });
   }
 
   if (!authHeader) {
-    return res.status(401).json({ error: "No token provided" });
+    return res.status(401).json({ message: "No token provided" });
   }
 
   try {
@@ -103,14 +103,14 @@ router.get("/:filepath", (req: Request, res: Response) => {
 
     return res.download(fullPath, (err) => {
       if (err && !res.headersSent) {
-        return res.status(404).json({ error: "File not found" });
+        return res.status(404).json({ message: "File not found" });
       }
     });
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ error: "Invalid or expired token" });
+      return res.status(401).json({ message: "Invalid or expired token" });
     }
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
