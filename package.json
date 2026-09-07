@@ -24,14 +24,16 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "ls": "^1.0.0",
     "multer": "^2.3.0",
+    "scripts": "^0.1.0",
     "tar": "^7.5.22"
   },
   "devDependencies": {
     "@prisma/cli-engine": "^0.2.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.4.1",
     "nodemon": "^3.1.11",
     "prisma": "^8.0.0-rc.10",
     "tsx": "^4.23.13",

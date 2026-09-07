@@ -17,7 +17,7 @@ router.get("/", async (req: Request, res: Response) => {
       "User prototype keys:",
       Object.getOwnPropertyNames(Object.getPrototypeOf(db.orm.public.User)),
     );
-    const users = await db.orm.public.User.limit(10).all();
+    const users = await db.orm.public.User.limit(limit).offset(offset).all();
 
     res.json(users);
   } catch (error) {

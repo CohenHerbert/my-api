@@ -5,6 +5,7 @@ import path from "path";
 import multer from "multer";
 import { db } from "@/prisma/db";
 import { unlink } from "node:fs/promises";
+import authenticateToken from "@/middleware/auth";
 
 const router = express.Router();
 
@@ -37,23 +38,17 @@ router.get("/", (req: Request, res: Response) => {
 
 router.post(
   "/upload",
+  authenticateToken,
   upload.single("file"),
   async (req: Request, res: Response) => {
     const file = req.file;
-    const authHeader = req.headers["authorization"];
 
     if (!file) {
       return res.status(400).json({ message: "No file provided" });
     }
 
-    if (!authHeader) {
-      await unlink(file.path);
-      return res.status(401).json({ message: "No token provided" });
-    }
-
     try {
-      const token = authHeader.split(" ")[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      const decoded = req.user as {
         userId: number;
       };
 
@@ -71,17 +66,12 @@ router.post(
     } catch (error) {
       await unlink(file.path);
 
-      if (error instanceof jwt.JsonWebTokenError) {
-        return res.status(401).json({ message: "Invalid or expired token" });
-      }
       res.status(500).json({ message: "Internal server error" });
     }
   },
 );
 
-router.get("/:filepath", (req: Request, res: Response) => {
-  const authHeader = req.headers["authorization"];
-
+router.get("/:filepath", authenticateToken, (req: Request, res: Response) => {
   const { filepath } = req.params as { filepath: string };
 
   const baseDir = path.resolve("/tmp/my-uploads");
@@ -91,13 +81,8 @@ router.get("/:filepath", (req: Request, res: Response) => {
     return res.status(403).json({ message: "Access Denied: Invalid path" });
   }
 
-  if (!authHeader) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
   try {
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = req.user as {
       userId: number;
     };
 
