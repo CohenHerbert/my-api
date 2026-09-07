@@ -71,32 +71,49 @@ router.post(
   },
 );
 
-router.get("/:filepath", authenticateToken, (req: Request, res: Response) => {
-  const { filepath } = req.params as { filepath: string };
+router.get(
+  "/:filepath",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    const { filepath } = req.params as { filepath: string };
 
-  const baseDir = path.resolve("/tmp/my-uploads");
-  const fullPath = path.resolve(baseDir, filepath);
+    const baseDir = path.resolve("/tmp/my-uploads");
+    const fullPath = path.resolve(baseDir, filepath);
 
-  if (!fullPath.startsWith(baseDir)) {
-    return res.status(403).json({ message: "Access Denied: Invalid path" });
-  }
+    if (!fullPath.startsWith(baseDir)) {
+      return res.status(403).json({ message: "Access Denied: Invalid path" });
+    }
 
-  try {
-    const decoded = req.user as {
-      userId: number;
-    };
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Missing session context" });
+    }
 
-    return res.download(fullPath, (err) => {
-      if (err && !res.headersSent) {
+    const userId = req.user.userId;
+
+    try {
+      const fileRecord = await db.orm.public.File.where({
+        path: fullPath,
+        userId: userId,
+      });
+
+      if (!fileRecord) {
         return res.status(404).json({ message: "File not found" });
       }
-    });
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+
+      return res.download(fullPath, (err) => {
+        if (err && !res.headersSent) {
+          return res.status(404).json({ message: "File not found" });
+        }
+      });
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+      }
+      res.status(500).json({ message: "Internal server error" });
     }
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+  },
+);
 
 export default router;
