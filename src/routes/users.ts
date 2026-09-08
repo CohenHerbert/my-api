@@ -3,11 +3,12 @@ import { genSaltSync, hashSync, compareSync } from "bcrypt-ts";
 import jwt from "jsonwebtoken";
 import { db } from "@/prisma/db";
 import authenticateToken from "@/middleware/auth";
+import requireAdmin from "@/middleware/admin";
 
 const router = express.Router();
 const salt = genSaltSync(10);
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", requireAdmin, async (req: Request, res: Response) => {
   const limit = parseInt(req.query.limit as string) || 50;
   const offset = parseInt(req.query.offset as string) || 0;
 
@@ -26,27 +27,23 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-router.get(
-  "/:username",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    try {
-      const { username } = req.params;
+router.get("/:username", requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { username } = req.params;
 
-      const user = await db.orm.public.User.where({
-        username: username,
-      }).first();
+    const user = await db.orm.public.User.where({
+      username: username,
+    }).first();
 
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-  },
-);
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 router.post("/login", async (req: Request, res: Response) => {
   const { username, password } = req.body;
@@ -66,9 +63,11 @@ router.post("/login", async (req: Request, res: Response) => {
         .json({ message: "Incorrect username or password" });
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: "1h" },
+    );
 
     res.status(200).json(token);
   } catch (error) {
@@ -87,9 +86,11 @@ router.post("/register", async (req: Request, res: Response) => {
       name,
     });
 
-    const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET!, {
-      expiresIn: "1h",
-    });
+    const token = jwt.sign(
+      { userId: newUser.id, role: newUser.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: "1h" },
+    );
 
     res.status(201).json([newUser, token]);
   } catch (error) {
